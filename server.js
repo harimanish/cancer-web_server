@@ -1,7 +1,7 @@
 const express = require("express");
 const tf = require("@tensorflow/tfjs-node");
 const multer = require("multer");
-const upload = multer({ dest: "uploads/" });
+// const upload = multer({ dest: "uploads/" });
 const fs = require("fs");
 const path = require('path');
 
@@ -36,10 +36,13 @@ const preprocessImage = (imageBuffer) => {
   return expanded.sub(offset).div(offset);
 };
 
-app.post("/predict", upload.single("image"), async (req, res) => {
+const upload = multer({
+  storage: multer.memoryStorage(),
+});
+
+app.post('/predict', upload.single('image'), async (req, res) => {
   try {
-    const imageBuffer = fs.readFileSync(req.file.path);
-    const tensor = preprocessImage(imageBuffer);
+    const tensor = preprocessImage(req.file.buffer);
     const model = await loadModel();
     const predictions = await model.predict(tensor).data();
     const top5 = Array.from(predictions)
@@ -52,7 +55,7 @@ app.post("/predict", upload.single("image"), async (req, res) => {
     res.send(top5);
   } catch (err) {
     console.error(err);
-    res.status(500).send("Internal Server Error");
+    res.status(500).send('Internal Server Error');
   }
 });
 
